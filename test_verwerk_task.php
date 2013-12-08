@@ -13,14 +13,16 @@ class Verwerk_Task {
 	}
 	
 	public function verwerk() {
+		$iTeller = 0;
 		foreach($this->m_aIds as $iId) {
 			$sSql = "SELECT timestamp from log where id=" . $iId;
 			$results  = $this->m_database->lees($sSql);
 			foreach ($results as $result) {
-				fprintf($this->m_fp, "timestamp: %s\n", $result['timestamp']);
-				// sleep(1);
+				fprintf($this->m_fp, "id: %-6s timestamp: %s\n",  $iId, $result['timestamp']);
 			}
+			$iTeller++;
 		}
+		fprintf($this->m_fp, "%-6s records verwerkt\n",  $iTeller);
 	}
 	
 }

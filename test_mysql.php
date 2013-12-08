@@ -19,6 +19,10 @@ class Mysql {
 
 	}
 	
+	public function close() {
+		$this->m_mysqli->close();
+	}
+	
 	public function lees($p_query) {
 		$res = mysqli_query($this->m_mysqli, $p_query);
 		$rows = array();

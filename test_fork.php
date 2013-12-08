@@ -13,33 +13,35 @@ $sSql = "SELECT count(*) aantal from log";
 $results = $mysql->lees($sSql);
 foreach ($results as $result) {
 	$iAantal = $result["aantal"];
-	echo $iAantal . "\n";
+	echo "Aantal logrecords: " . $iAantal . "\n";
 }
 
 $sSql = "SELECT id from log limit 0,1";
 $results  = $mysql->lees($sSql);
 foreach ($results as $result) {
-	echo $result['id'] . "\n";
+	echo "Id van record 1: " . $result['id'] . "\n";
 }
 
 $sSql = "SELECT timestamp from log where id=9544";
 $results  = $mysql->lees($sSql);
 foreach ($results as $result) {
-	printf("timestamp: %s\n", $result['timestamp']);
+	printf("timestamp van id 9544: %s\n", $result['timestamp']);
 }
 
-$iLimiet = 60;
+$iLimiet = 2000;
 for ($iTeller = 0; $iTeller < 10; $iTeller++) {
 	$iRecord = $iTeller * $iLimiet;
 	$sSql = 'SELECT id from log limit '.$iRecord.',1';
 	$results  = $mysql->lees($sSql);
 	foreach ($results as $result) {
-		echo $iRecord + 1 . ': ' . $result['id'] . "\n";
+		echo "Id van logrecord " . ($iRecord + 1) . ': ' . $result['id'] . "\n";
 	}
 }
 
+// hier begint het serieuze deel
 $aAlleIds = array();
-for ($iTeller = 0; $iTeller < 10; $iTeller++) {
+$max = ceil($iAantal / $iLimiet);		// aantal aan te maken taken
+for ($iTeller = 0; $iTeller < $max; $iTeller++) {
 	$aIds = array();
 	$iRecord = $iTeller * $iLimiet;
 	$sSql = 'SELECT id from log limit '.$iRecord.',' . $iLimiet;
@@ -50,17 +52,29 @@ for ($iTeller = 0; $iTeller < 10; $iTeller++) {
 	$aAlleIds[] = $aIds;
 }
 
-echo "aantal aIds: " . count($aAlleIds) . "\n";
+// database vanaf hier niet meer nodig
+$mysql->close();
 
-index(1, $aAlleIds[0]);
-index(2, $aAlleIds[1]);
-index(3, $aAlleIds[2]);
+echo "Aantal taken (aIds): " . count($aAlleIds) . "\n";
+
+// test
+//index(1, $aAlleIds[0]);
+//index(2, $aAlleIds[1]);
+//index(3, $aAlleIds[2]);
+
+// alle taken achtereensvolgens starten
+$i=1;
+foreach($aAlleIds as $aIds) {
+	index($i++, $aIds);
+}
+
+echo "Parent is gereed; er zijn " . ($i-1) . " taken gestart\n";
 
 function index($i, $aIds) 
 { 
         // Do some initial processing 
 
-        echo("Hello World: " . $i . "\n"); 
+        echo("Child process " . $i . "\n");
 
         // Switch over to daemon mode. 
 
@@ -75,18 +89,19 @@ function index($i, $aIds)
 
         register_shutdown_function('shutdown'); 
 
+        // Make the current process a session leader
         if (posix_setsid() < 0) 
             return; 
 
-        if ($pid = pcntl_fork()) 
-            return;     // Parent 
+        // Waar is dit goed voor??
+        //if ($pid = pcntl_fork()) 
+        //    return;     // Parent 
 
         // Now running as a daemon. This process will even survive 
         // an apachectl stop. 
 
-        // vertraging tussen iedere taak?
-        // lijkt niet te werken
-        sleep(60);
+        // ???
+        // sleep(10);
         
         // open database connectie
         $mysql = new Mysql();
@@ -110,6 +125,9 @@ function index($i, $aIds)
         fprintf($fp, "einde %s\n", date("H:i:s"));
         fclose($fp); 
 
+        // even wachten, dan kun je nog iets zien met 'ps ux'
+        sleep(10);
+        
         return; 
 } 
 
@@ -117,7 +135,7 @@ function index($i, $aIds)
 // zie 'kill -l' voor de signalen
 function shutdown() { 
 	// verwijdert dit proces
-	posix_kill(posix_getpid(), SIGHUP); 
+	posix_kill(posix_getpid(), SIGHUP);
 	// of deze - voorkomt cleanup??
 	// posix_kill(posix_getpid(), SIGKILL); 
 } 
