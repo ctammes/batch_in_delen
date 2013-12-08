@@ -4,7 +4,7 @@ class Mysql {
 
 	private $m_mysqli;
 
-	public function Mysql() {
+	public function __construct() {
 		$this->open();
 	}
 		

@@ -6,7 +6,7 @@ class Verwerk_Task {
 	private $m_database;
 	private $m_fp;
 	
-	public function Verwerk_Task($database, $aIds, $fp) {
+	public function __construct($database, $aIds, $fp) {
 		$this->m_aIds = $aIds;
 		$this->m_database = $database;
 		$this->m_fp = $fp;
